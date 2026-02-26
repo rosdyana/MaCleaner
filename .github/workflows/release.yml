@@ -1,0 +1,132 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    
+    - name: Run tests
+      run: go test ./internal/... -v
+    
+    - name: Build test
+      run: go build -v ./...
+
+  build:
+    needs: test
+    runs-on: macos-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    
+    - name: Build binaries
+      run: |
+        mkdir -p dist
+        
+        # Build for AMD64 (Intel)
+        CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build \
+          -trimpath \
+          -ldflags="-s -w -buildid= -X main.Version=${{ github.ref_name }}" \
+          -o dist/macos-cleaner-amd64 .
+        
+        # Build for ARM64 (Apple Silicon)
+        CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build \
+          -trimpath \
+          -ldflags="-s -w -buildid= -X main.Version=${{ github.ref_name }}" \
+          -o dist/macos-cleaner-arm64 .
+        
+        # Build for current architecture
+        CGO_ENABLED=0 go build \
+          -trimpath \
+          -ldflags="-s -w -buildid= -X main.Version=${{ github.ref_name }}" \
+          -o dist/macos-cleaner .
+        
+        # Create universal binary
+        lipo -create \
+          -output dist/macos-cleaner-universal \
+          dist/macos-cleaner-amd64 \
+          dist/macos-cleaner-arm64
+    
+    - name: Compress binaries
+      run: |
+        cd dist
+        gzip -k macos-cleaner-amd64
+        gzip -k macos-cleaner-arm64
+        gzip -k macos-cleaner
+        gzip -k macos-cleaner-universal
+        
+        # Create tar archives
+        tar czf macos-cleaner-amd64.tar.gz macos-cleaner-amd64
+        tar czf macos-cleaner-arm64.tar.gz macos-cleaner-arm64
+        tar czf macos-cleaner-universal.tar.gz macos-cleaner-universal
+    
+    - name: Generate checksums
+      run: |
+        cd dist
+        shasum -a 256 * > checksums.txt
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: binaries
+        path: dist/*
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          dist/macos-cleaner
+          dist/macos-cleaner-amd64
+          dist/macos-cleaner-arm64
+          dist/macos-cleaner-universal
+          dist/*.tar.gz
+          dist/checksums.txt
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-pr:
+    needs: test
+    runs-on: macos-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    
+    - name: Build binaries
+      run: |
+        mkdir -p dist
+        ./build.sh
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: pr-binaries
+        path: bin/*

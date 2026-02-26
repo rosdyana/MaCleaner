@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    
+    - name: Download dependencies
+      run: |
+        go mod download
+        go mod tidy
+    
+    - name: Run vet
+      run: go vet ./...
+    
+    - name: Run tests
+      run: go test ./internal/... -v -race -coverprofile=coverage.out
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.out
+        fail_ci_if_error: false
+    
+    - name: Build
+      run: |
+        CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -buildid=" -v ./...
+    
+    - name: Check binary size
+      run: |
+        CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -buildid=" -o macos-cleaner .
+        ls -lh macos-cleaner
+        size=$(stat -f%z macos-cleaner)
+        echo "Binary size: $size bytes"
+        # Fail if binary is larger than 5MB
+        if [ $size -gt 5242880 ]; then
+          echo "Error: Binary size exceeds 5MB"
+          exit 1
+        fi
+
+  lint:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+    
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        args: --timeout=5m
