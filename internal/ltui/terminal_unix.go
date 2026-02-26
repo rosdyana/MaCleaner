@@ -16,7 +16,7 @@ func makeRaw(fd *os.File) (*unix.Termios, error) {
 
 	newState := *oldState
 	newState.Lflag &^= unix.ECHO | unix.ICANON
-	
+
 	if err := unix.IoctlSetTermios(int(fd.Fd()), unix.TIOCSETA, &newState); err != nil {
 		return nil, err
 	}

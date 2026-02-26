@@ -27,11 +27,11 @@ func New(sudoMgr *utils.SudoManager) *Cleaner {
 
 // CleanResult represents the result of a cleaning operation
 type CleanResult struct {
-	Target      string
-	Requested   int64
-	Actual      int64
-	Error       error
-	Timestamp   time.Time
+	Target    string
+	Requested int64
+	Actual    int64
+	Error     error
+	Timestamp time.Time
 }
 
 // CleanTargets cleans the selected targets and returns actual space freed
@@ -65,7 +65,7 @@ func (c *Cleaner) CleanTargets(targets []models.CleanupTarget, progress func(str
 
 		result := c.cleanTarget(target)
 		results = append(results, result)
-		
+
 		if result.Error == nil {
 			totalSaved += result.Actual
 			target.Size = 0 // Reset size after successful cleaning
@@ -95,7 +95,7 @@ func (c *Cleaner) cleanTarget(target *models.CleanupTarget) CleanResult {
 
 	path := utils.ExpandPath(target.Path)
 	expandedPath := utils.ExpandPath(target.Path)
-	
+
 	// Check if the path exists before trying to clean
 	matches, err := filepath.Glob(expandedPath)
 	if err != nil {
@@ -107,15 +107,15 @@ func (c *Cleaner) cleanTarget(target *models.CleanupTarget) CleanResult {
 		result.Actual = 0
 		return result
 	}
-	
+
 	// Calculate actual size BEFORE deletion
 	actualBefore := c.calculateActualSize(path)
-	
+
 	if actualBefore == 0 {
 		// Files exist but have no size (maybe permission issue)
 		// Try to clean anyway
 	}
-	
+
 	// Perform deletion
 	if err := c.deletePath(path, target.RequiresSudo); err != nil {
 		result.Error = fmt.Errorf("failed to delete %s: %w", target.Path, err)
@@ -127,7 +127,7 @@ func (c *Cleaner) cleanTarget(target *models.CleanupTarget) CleanResult {
 
 	// Calculate remaining size AFTER deletion
 	actualAfter := c.calculateActualSize(path)
-	
+
 	// Actual space freed is the difference
 	result.Actual = actualBefore - actualAfter
 
@@ -141,7 +141,7 @@ func (c *Cleaner) calculateActualSize(pattern string) int64 {
 	if strings.Contains(pattern, "*") {
 		basePath := strings.Split(pattern, "*")[0]
 		var total int64
-		
+
 		// Use find command for more accurate results with wildcards
 		cmd := exec.Command("find", basePath, "-type", "f", "-print0")
 		output, err := cmd.Output()
@@ -149,7 +149,7 @@ func (c *Cleaner) calculateActualSize(pattern string) int64 {
 			// Fallback to walk
 			return c.walkCalculateSize(basePath, pattern)
 		}
-		
+
 		// Parse null-terminated output
 		files := strings.Split(string(output), "\x00")
 		for _, file := range files {
@@ -180,7 +180,7 @@ func (c *Cleaner) calculateActualSize(pattern string) int64 {
 // walkCalculateSize calculates size by walking directory
 func (c *Cleaner) walkCalculateSize(basePath, pattern string) int64 {
 	var total int64
-	
+
 	filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
@@ -188,14 +188,14 @@ func (c *Cleaner) walkCalculateSize(basePath, pattern string) int64 {
 		if info.IsDir() {
 			return nil
 		}
-		
+
 		// Simple glob match
 		if matched, _ := filepath.Match(pattern, path); matched {
 			total += info.Size()
 		}
 		return nil
 	})
-	
+
 	return total
 }
 
@@ -207,11 +207,11 @@ func (c *Cleaner) deletePath(path string, useSudo bool) error {
 		if err != nil {
 			return fmt.Errorf("glob failed: %w", err)
 		}
-		
+
 		if len(matches) == 0 {
 			return nil // Nothing to delete
 		}
-		
+
 		var lastErr error
 		deletedCount := 0
 		for _, match := range matches {
@@ -222,7 +222,7 @@ func (c *Cleaner) deletePath(path string, useSudo bool) error {
 			}
 			deletedCount++
 		}
-		
+
 		if lastErr != nil && deletedCount == 0 {
 			return fmt.Errorf("failed to delete any files: %w", lastErr)
 		}

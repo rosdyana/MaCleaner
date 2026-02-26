@@ -69,7 +69,7 @@ func IsDirectory(path string) bool {
 // than standard filepath.Glob for patterns like ~/Library/Caches/*
 func SafeGlob(pattern string) ([]string, error) {
 	expanded := ExpandPath(pattern)
-	
+
 	// If pattern ends with /*, we need to find all matching directories recursively
 	if strings.HasSuffix(pattern, "/*") {
 		baseDir := strings.TrimSuffix(expanded, "/*")
@@ -86,7 +86,7 @@ func SafeGlob(pattern string) ([]string, error) {
 		})
 		return matches, err
 	}
-	
+
 	return filepath.Glob(expanded)
 }
 

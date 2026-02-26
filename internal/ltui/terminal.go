@@ -619,7 +619,7 @@ func (t *Terminal) PrintOldFilesResults(files []models.OldFile, selected map[int
 // ReadKey reads a single keypress
 func (t *Terminal) ReadKey() string {
 	reader := bufio.NewReader(os.Stdin)
-	
+
 	// Set raw mode
 	oldState, err := makeRaw(os.Stdin)
 	if err != nil {

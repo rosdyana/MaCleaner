@@ -15,17 +15,17 @@ import (
 )
 
 type app struct {
-	term         *ltui.Terminal
-	scanner      *scanner.Scanner
-	cleaner      *cleaner.Cleaner
-	targets      []models.CleanupTarget
-	bigFiles     []models.BigFile
+	term            *ltui.Terminal
+	scanner         *scanner.Scanner
+	cleaner         *cleaner.Cleaner
+	targets         []models.CleanupTarget
+	bigFiles        []models.BigFile
 	duplicateGroups []models.DuplicateGroup
-	oldFiles     []models.OldFile
-	
+	oldFiles        []models.OldFile
+
 	// State
-	cursor       int
-	selections   map[int]bool
+	cursor     int
+	selections map[int]bool
 }
 
 func newApp() *app {
@@ -415,7 +415,7 @@ func (a *app) deleteOldFiles() {
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
-	
+
 	app := newApp()
 	app.run()
 }

@@ -8,7 +8,7 @@ import (
 
 func TestExpandPath(t *testing.T) {
 	home, _ := os.UserHomeDir()
-	
+
 	tests := []struct {
 		input    string
 		expected string
@@ -18,7 +18,7 @@ func TestExpandPath(t *testing.T) {
 		{"/absolute/path", "/absolute/path"},
 		{"relative/path", "relative/path"},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
 			result := ExpandPath(tt.input)
@@ -37,12 +37,12 @@ func TestFileExists(t *testing.T) {
 	}
 	defer os.Remove(tmpFile.Name())
 	tmpFile.Close()
-	
+
 	// Test existing file
 	if !FileExists(tmpFile.Name()) {
 		t.Error("FileExists returned false for existing file")
 	}
-	
+
 	// Test non-existing file
 	if FileExists("/non/existent/path/file.txt") {
 		t.Error("FileExists returned true for non-existing file")
@@ -56,24 +56,24 @@ func TestIsDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	// Create temp file
 	tmpFile, err := os.CreateTemp(tmpDir, "test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	tmpFile.Close()
-	
+
 	// Test directory
 	if !IsDirectory(tmpDir) {
 		t.Error("IsDirectory returned false for directory")
 	}
-	
+
 	// Test file
 	if IsDirectory(tmpFile.Name()) {
 		t.Error("IsDirectory returned true for file")
 	}
-	
+
 	// Test non-existing
 	if IsDirectory("/non/existent/path") {
 		t.Error("IsDirectory returned true for non-existing path")
@@ -91,7 +91,7 @@ func TestShortenPath(t *testing.T) {
 		{"/a", 3, "/a"},
 		{"", 10, ""},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.path, func(t *testing.T) {
 			got := ShortenPath(tt.path, tt.maxLen)
@@ -109,25 +109,25 @@ func TestFileHash(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(tmpFile.Name())
-	
+
 	content := []byte("test content for hashing")
 	if _, err := tmpFile.Write(content); err != nil {
 		t.Fatal(err)
 	}
 	tmpFile.Close()
-	
+
 	// Test hash
 	hash1 := FileHash(tmpFile.Name())
 	if hash1 == "" {
 		t.Error("FileHash returned empty string for existing file")
 	}
-	
+
 	// Test consistency
 	hash2 := FileHash(tmpFile.Name())
 	if hash1 != hash2 {
 		t.Error("FileHash returned different hashes for same file")
 	}
-	
+
 	// Test non-existing file
 	hash3 := FileHash("/non/existent/file")
 	if hash3 != "" {
@@ -142,11 +142,11 @@ func TestDirSize(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
-	
+
 	// Create files with known sizes
 	sizes := []int64{100, 200, 300}
 	var expectedTotal int64
-	
+
 	for i, size := range sizes {
 		data := make([]byte, size)
 		filename := filepath.Join(tmpDir, "file"+string(rune('0'+i)))
@@ -155,20 +155,20 @@ func TestDirSize(t *testing.T) {
 		}
 		expectedTotal += size
 	}
-	
+
 	// Create subdirectory
 	subDir := filepath.Join(tmpDir, "subdir")
 	if err := os.Mkdir(subDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	// Add file in subdirectory
 	subData := make([]byte, 50)
 	if err := os.WriteFile(filepath.Join(subDir, "subfile"), subData, 0644); err != nil {
 		t.Fatal(err)
 	}
 	expectedTotal += 50
-	
+
 	// Test DirSize
 	size := DirSize(tmpDir)
 	if size != expectedTotal {

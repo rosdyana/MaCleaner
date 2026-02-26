@@ -79,7 +79,7 @@ func (s *Scanner) getHomebrewCleanupSize() int64 {
 	if err != nil {
 		return 0
 	}
-	
+
 	var totalBytes int64
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines {
@@ -90,7 +90,7 @@ func (s *Scanner) getHomebrewCleanupSize() int64 {
 			totalBytes += size
 		}
 	}
-	
+
 	return totalBytes
 }
 
@@ -100,7 +100,7 @@ func parseHomebrewSize(s string) int64 {
 	if s == "" {
 		return 0
 	}
-	
+
 	// Extract numeric part
 	var numStr string
 	var unit string
@@ -112,10 +112,10 @@ func parseHomebrewSize(s string) int64 {
 			break
 		}
 	}
-	
+
 	var num float64
 	fmt.Sscanf(numStr, "%f", &num)
-	
+
 	unit = strings.ToUpper(strings.TrimSpace(unit))
 	switch unit {
 	case "KB", "K":
@@ -171,19 +171,19 @@ func (s *Scanner) ScanBigFiles(minSize int64, progress func(status string)) []mo
 	}
 
 	scannedCount := 0
-	
+
 	for _, dir := range dirs {
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			continue
 		}
-		
+
 		filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return nil
 			}
 
 			scannedCount++
-			
+
 			// Update progress periodically
 			if scannedCount%500 == 0 {
 				progress(fmt.Sprintf("Scanned %d files...", scannedCount))
@@ -242,7 +242,7 @@ func (s *Scanner) ScanDuplicates(progress func(status string)) ([]models.Duplica
 			if err != nil {
 				return nil
 			}
-			
+
 			if info.IsDir() {
 				if skipDirs[info.Name()] || strings.HasPrefix(info.Name(), ".") {
 					return filepath.SkipDir
@@ -273,7 +273,7 @@ func (s *Scanner) ScanDuplicates(progress func(status string)) ([]models.Duplica
 	for _, paths := range sizeMap {
 		totalPaths += len(paths)
 	}
-	
+
 	for _, paths := range sizeMap {
 		if len(paths) < 2 {
 			continue
